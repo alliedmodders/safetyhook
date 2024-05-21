@@ -1,5 +1,4 @@
 // This is the OS abstraction layer.
-#pragma once
 
 #ifndef SAFETYHOOK_USE_CXXMODULES
 #include <cstdint>
