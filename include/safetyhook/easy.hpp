@@ -21,10 +21,12 @@ namespace safetyhook {
 /// @param destination The address of the destination function.
 /// @param flags The flags to use.
 /// @return The InlineHook object.
+/*
 [[nodiscard]] InlineHook create_inline(
-    FnPtr auto target, FnPtr auto destination, InlineHook::Flags flags = InlineHook::Default) {
+    FnPtr target, FnPtr destination, InlineHook::Flags flags = InlineHook::Default) {
     return create_inline(reinterpret_cast<void*>(target), reinterpret_cast<void*>(destination), flags);
 }
+*/
 
 /// @brief Easy to use API for creating a MidHook.
 /// @param target the address of the function to hook.
@@ -38,9 +40,11 @@ namespace safetyhook {
 /// @param destination The destination function.
 /// @param flags The flags to use.
 /// @return The MidHook object.
-[[nodiscard]] MidHook create_mid(FnPtr auto target, MidHookFn destination, MidHook::Flags flags = MidHook::Default) {
+/*
+[[nodiscard]] MidHook create_mid(FnPtr target, MidHookFn destination, MidHook::Flags flags = MidHook::Default) {
     return create_mid(reinterpret_cast<void*>(target), destination, flags);
 }
+*/
 
 /// @brief Easy to use API for creating a VmtHook.
 /// @param object The object to hook.
@@ -52,12 +56,14 @@ namespace safetyhook {
 /// @param index The index of the method to hook.
 /// @param destination The destination function.
 /// @return The VmHook object.
-[[nodiscard]] VmHook create_vm(VmtHook& vmt, size_t index, FnPtr auto destination) {
+/*
+[[nodiscard]] VmHook create_vm(VmtHook& vmt, size_t index, FnPtr destination) {
     if (auto hook = vmt.hook_method(index, destination)) {
         return std::move(*hook);
     } else {
         return {};
     }
 }
+*/
 
 } // namespace safetyhook

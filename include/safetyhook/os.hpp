@@ -3,7 +3,7 @@
 
 #ifndef SAFETYHOOK_USE_CXXMODULES
 #include <cstdint>
-#include <expected>
+#include <expected.hpp>
 #include <functional>
 #else
 import std.compat;
@@ -28,15 +28,18 @@ struct VmAccess {
     bool write : 1;
     bool execute : 1;
 
+    constexpr VmAccess() : read(true), write(true), execute(true) {};
+    constexpr VmAccess(bool pread, bool pwrite, bool pexecute) : read(pread), write(pwrite), execute(pexecute) {};
+
     constexpr bool operator==(const VmAccess& other) const {
         return read == other.read && write == other.write && execute == other.execute;
     }
 };
 
-constexpr VmAccess VM_ACCESS_R{.read = true, .write = false, .execute = false};
-constexpr VmAccess VM_ACCESS_RW{.read = true, .write = true, .execute = false};
-constexpr VmAccess VM_ACCESS_RX{.read = true, .write = false, .execute = true};
-constexpr VmAccess VM_ACCESS_RWX{.read = true, .write = true, .execute = true};
+constexpr VmAccess VM_ACCESS_R(true, false,  false);
+constexpr VmAccess VM_ACCESS_RW(true, true,  false);
+constexpr VmAccess VM_ACCESS_RX(true, false,  true);
+constexpr VmAccess VM_ACCESS_RWX(true, true,  true);
 
 struct VmBasicInfo {
     uint8_t* address;

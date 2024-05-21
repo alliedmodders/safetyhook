@@ -5,7 +5,7 @@
 
 #ifndef SAFETYHOOK_USE_CXXMODULES
 #include <cstdint>
-#include <expected>
+#include <expected.hpp>
 #include <memory>
 #include <mutex>
 #include <vector>

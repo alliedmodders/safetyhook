@@ -259,10 +259,14 @@ std::expected<uint8_t*, Allocator::Error> Allocator::allocate_nearby_memory(
 }
 
 bool Allocator::in_range(uint8_t* address, const std::vector<uint8_t*>& desired_addresses, size_t max_distance) {
-    return std::ranges::all_of(desired_addresses, [&](const auto& desired_address) {
-        const size_t delta = (address > desired_address) ? address - desired_address : desired_address - address;
-        return delta <= max_distance;
-    });
+    bool ret = true;
+    for (auto desired_address = desired_addresses.begin(); desired_address != desired_addresses.end(); desired_address++) {
+        uint8_t* value = *desired_address;
+
+        const size_t delta = (address > value) ? address - value : value - address;
+        ret &= (delta <= max_distance);
+    }
+    return ret;
 }
 
 Allocator::Memory::~Memory() {

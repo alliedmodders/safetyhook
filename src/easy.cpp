@@ -24,4 +24,5 @@ VmtHook create_vmt(void* object) {
         return {};
     }
 }
+
 } // namespace safetyhook

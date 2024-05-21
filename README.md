@@ -1,5 +1,10 @@
 # SafetyHook
 
+## SM Compatibility notes
+This is hacked apart to build on c++11 - execute |python amalgamate.py --polyfill| to regenerate the files used by sourcemod
+
+## Intro
+
 SafetyHook is a **C++23** procedure hooking library for Windows x86 and x86_64 systems. It aims to make runtime procedure hooking as safe as possible while maintaining simplicity of its implementation. To that end it currently does:
 
 * Stops all other threads when creating or deleting hooks
