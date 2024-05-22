@@ -25,13 +25,13 @@ std::expected<uint8_t*, OsError> vm_allocate(uint8_t* address, size_t size, VmAc
     } else if (access == VM_ACCESS_RWX) {
         prot = PROT_READ | PROT_WRITE | PROT_EXEC;
     } else {
-        return std::unexpected{OsError::FAILED_TO_ALLOCATE};
+        return tl::unexpected{OsError::FAILED_TO_ALLOCATE};
     }
 
     auto* result = mmap(address, size, prot, flags, -1, 0);
 
     if (result == MAP_FAILED) {
-        return std::unexpected{OsError::FAILED_TO_ALLOCATE};
+        return tl::unexpected{OsError::FAILED_TO_ALLOCATE};
     }
 
     return static_cast<uint8_t*>(result);
@@ -53,7 +53,7 @@ std::expected<uint32_t, OsError> vm_protect(uint8_t* address, size_t size, VmAcc
     } else if (access == VM_ACCESS_RWX) {
         prot = PROT_READ | PROT_WRITE | PROT_EXEC;
     } else {
-        return std::unexpected{OsError::FAILED_TO_PROTECT};
+        return tl::unexpected{OsError::FAILED_TO_PROTECT};
     }
 
     return vm_protect(address, size, prot);
@@ -63,7 +63,7 @@ std::expected<uint32_t, OsError> vm_protect(uint8_t* address, size_t size, uint3
     auto mbi = vm_query(address);
 
     if (!mbi.has_value()) {
-        return std::unexpected{OsError::FAILED_TO_PROTECT};
+        return tl::unexpected{OsError::FAILED_TO_PROTECT};
     }
 
     uint32_t old_protect = 0;
@@ -83,7 +83,7 @@ std::expected<uint32_t, OsError> vm_protect(uint8_t* address, size_t size, uint3
     auto* addr = align_down(address, static_cast<size_t>(sysconf(_SC_PAGESIZE)));
 
     if (mprotect(addr, size, static_cast<int>(protect)) == -1) {
-        return std::unexpected{OsError::FAILED_TO_PROTECT};
+        return tl::unexpected{OsError::FAILED_TO_PROTECT};
     }
 
     return old_protect;
@@ -93,7 +93,7 @@ std::expected<VmBasicInfo, OsError> vm_query(uint8_t* address) {
     auto* maps = fopen("/proc/self/maps", "r");
 
     if (maps == nullptr) {
-        return std::unexpected{OsError::FAILED_TO_QUERY};
+        return tl::unexpected{OsError::FAILED_TO_QUERY};
     }
 
     char line[512];
@@ -152,7 +152,7 @@ std::expected<VmBasicInfo, OsError> vm_query(uint8_t* address) {
     fclose(maps);
 
     if (!info.has_value()) {
-        return std::unexpected{OsError::FAILED_TO_QUERY};
+        return tl::unexpected{OsError::FAILED_TO_QUERY};
     }
 
     return info.value();
@@ -173,12 +173,12 @@ bool vm_is_executable(uint8_t* address) {
 SystemInfo system_info() {
     auto page_size = static_cast<uint32_t>(sysconf(_SC_PAGESIZE));
 
-    return {
-        .page_size = page_size,
-        .allocation_granularity = page_size,
-        .min_address = reinterpret_cast<uint8_t*>(0x10000),
-        .max_address = reinterpret_cast<uint8_t*>(1ull << 47),
-    };
+    SystemInfo info;
+    info.page_size = page_size;
+    info.allocation_granularity = page_size;
+    info.min_address = reinterpret_cast<uint8_t*>(0x10000);
+    info.max_address = reinterpret_cast<uint8_t*>(1ull << 47);
+    return info;
 }
 
 void trap_threads([[maybe_unused]] uint8_t* from, [[maybe_unused]] uint8_t* to, [[maybe_unused]] size_t len,

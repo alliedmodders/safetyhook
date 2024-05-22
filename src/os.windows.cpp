@@ -31,13 +31,13 @@ std::expected<uint8_t*, OsError> vm_allocate(uint8_t* address, size_t size, VmAc
     } else if (access == VM_ACCESS_RWX) {
         protect = PAGE_EXECUTE_READWRITE;
     } else {
-        return std::unexpected{OsError::FAILED_TO_ALLOCATE};
+        return tl::unexpected{OsError::FAILED_TO_ALLOCATE};
     }
 
     auto* result = VirtualAlloc(address, size, MEM_COMMIT | MEM_RESERVE, protect);
 
     if (result == nullptr) {
-        return std::unexpected{OsError::FAILED_TO_ALLOCATE};
+        return tl::unexpected{OsError::FAILED_TO_ALLOCATE};
     }
 
     return static_cast<uint8_t*>(result);
@@ -59,7 +59,7 @@ std::expected<uint32_t, OsError> vm_protect(uint8_t* address, size_t size, VmAcc
     } else if (access == VM_ACCESS_RWX) {
         protect = PAGE_EXECUTE_READWRITE;
     } else {
-        return std::unexpected{OsError::FAILED_TO_PROTECT};
+        return tl::unexpected{OsError::FAILED_TO_PROTECT};
     }
 
     return vm_protect(address, size, protect);
@@ -69,7 +69,7 @@ std::expected<uint32_t, OsError> vm_protect(uint8_t* address, size_t size, uint3
     DWORD old_protect = 0;
 
     if (VirtualProtect(address, size, protect, &old_protect) == FALSE) {
-        return std::unexpected{OsError::FAILED_TO_PROTECT};
+        return tl::unexpected{OsError::FAILED_TO_PROTECT};
     }
 
     return old_protect;
@@ -80,7 +80,7 @@ std::expected<VmBasicInfo, OsError> vm_query(uint8_t* address) {
     auto result = VirtualQuery(address, &mbi, sizeof(mbi));
 
     if (result == 0) {
-        return std::unexpected{OsError::FAILED_TO_QUERY};
+        return tl::unexpected{OsError::FAILED_TO_QUERY};
     }
 
     VmAccess access(

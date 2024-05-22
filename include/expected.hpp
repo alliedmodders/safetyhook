@@ -2441,4 +2441,10 @@ void swap(expected<T, E> &lhs,
 }
 } // namespace tl
 
+namespace std 
+{
+  template<class T, class E>
+  using expected = tl::expected<T,E>;
+}
+
 #endif
