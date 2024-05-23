@@ -115,7 +115,7 @@ std::expected<Allocation, Allocator::Error> Allocator::internal_allocate_near(
     auto allocation_address = allocate_nearby_memory(desired_addresses, allocation_size, max_distance);
 
     if (!allocation_address) {
-        return std::unexpected{allocation_address.error()};
+        return tl::unexpected{allocation_address.error()};
     }
 
     auto& allocation = m_memory.emplace_back(new Memory);
@@ -183,7 +183,7 @@ std::expected<uint8_t*, Allocator::Error> Allocator::allocate_nearby_memory(
             return result.value();
         }
 
-        return std::unexpected{Error::BAD_VIRTUAL_ALLOC};
+        return tl::unexpected{Error::BAD_VIRTUAL_ALLOC};
     }
 
     auto attempt_allocation = [&](uint8_t* p) -> uint8_t* {
@@ -255,7 +255,7 @@ std::expected<uint8_t*, Allocator::Error> Allocator::allocate_nearby_memory(
         }
     }
 
-    return std::unexpected{Error::NO_MEMORY_IN_RANGE};
+    return tl::unexpected{Error::NO_MEMORY_IN_RANGE};
 }
 
 bool Allocator::in_range(uint8_t* address, const std::vector<uint8_t*>& desired_addresses, size_t max_distance) {

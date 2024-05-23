@@ -54,7 +54,7 @@ std::expected<VmtHook, VmtHook::Error> VmtHook::create(void* object) {
     auto allocation = Allocator::global()->allocate(num_vmt_entries * sizeof(uint8_t*));
 
     if (!allocation) {
-        return std::unexpected{Error::bad_allocation(allocation.error())};
+        return tl::unexpected{Error::bad_allocation(allocation.error())};
     }
 
     hook.m_new_vmt_allocation = std::make_shared<Allocation>(std::move(*allocation));

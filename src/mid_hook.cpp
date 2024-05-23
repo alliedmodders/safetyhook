@@ -78,12 +78,12 @@ std::expected<MidHook, MidHook::Error> MidHook::create(
 
     if (const auto setup_result = hook.setup(allocator, reinterpret_cast<uint8_t*>(target), destination);
         !setup_result) {
-        return std::unexpected{setup_result.error()};
+        return tl::unexpected{setup_result.error()};
     }
 
     if (!(flags & StartDisabled)) {
         if (auto enable_result = hook.enable(); !enable_result) {
-            return std::unexpected{enable_result.error()};
+            return tl::unexpected{enable_result.error()};
         }
     }
 
@@ -120,7 +120,7 @@ std::expected<void, MidHook::Error> MidHook::setup(
     auto stub_allocation = allocator->allocate(asm_data.size());
 
     if (!stub_allocation) {
-        return std::unexpected{Error::bad_allocation(stub_allocation.error())};
+        return tl::unexpected{Error::bad_allocation(stub_allocation.error())};
     }
 
     m_stub = std::move(*stub_allocation);
@@ -141,7 +141,7 @@ std::expected<void, MidHook::Error> MidHook::setup(
 
     if (!hook_result) {
         m_stub.free();
-        return std::unexpected{Error::bad_inline_hook(hook_result.error())};
+        return tl::unexpected{Error::bad_inline_hook(hook_result.error())};
     }
 
     m_hook = std::move(*hook_result);
@@ -157,7 +157,7 @@ std::expected<void, MidHook::Error> MidHook::setup(
 
 std::expected<void, MidHook::Error> MidHook::enable() {
     if (auto enable_result = m_hook.enable(); !enable_result) {
-        return std::unexpected{Error::bad_inline_hook(enable_result.error())};
+        return tl::unexpected{Error::bad_inline_hook(enable_result.error())};
     }
 
     return {};
@@ -165,7 +165,7 @@ std::expected<void, MidHook::Error> MidHook::enable() {
 
 std::expected<void, MidHook::Error> MidHook::disable() {
     if (auto disable_result = m_hook.disable(); !disable_result) {
-        return std::unexpected{Error::bad_inline_hook(disable_result.error())};
+        return tl::unexpected{Error::bad_inline_hook(disable_result.error())};
     }
 
     return {};
