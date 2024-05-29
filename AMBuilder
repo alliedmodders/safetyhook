@@ -51,7 +51,8 @@ for compiler in SafetyHook.all_targets:
       "-pedantic",
       "-Wshadow",
       "-Wno-unused-const-variable",
-      "-Wno-unused-function"
+      "-Wno-unused-function",
+      "-fPIC"
     ]
     compiler.cxxflags += [
       "-Wnon-virtual-dtor",
