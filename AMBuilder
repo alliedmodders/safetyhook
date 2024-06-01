@@ -6,7 +6,7 @@ def AddSourceFilesFromDir(path, files):
     list.append(os.path.join(path, file))
   return list
 
-libsafetyhook = builder.StaticLibraryProject('libsafetyhook')
+libsafetyhook = builder.StaticLibraryProject('safetyhook')
 # SafetyHook sourcefiles
 libsafetyhook.sources = AddSourceFilesFromDir(os.path.join(builder.currentSourcePath, 'src'),[
   "allocator.cpp",
