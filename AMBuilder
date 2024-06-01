@@ -56,6 +56,7 @@ for compiler in SafetyHook.all_targets:
     ]
     compiler.cxxflags += [
       "-Wnon-virtual-dtor",
+      "-Wno-format",
       "-std=c++17"
     ]
     binary.sources += [ os.path.join(builder.currentSourcePath, 'src', 'os.linux.cpp') ]
