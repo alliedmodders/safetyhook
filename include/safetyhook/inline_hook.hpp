@@ -5,7 +5,7 @@
 
 #ifndef SAFETYHOOK_USE_CXXMODULES
 #include <cstdint>
-#include <expected.hpp>
+#include <expected>
 #include <memory>
 #include <mutex>
 #include <utility>
@@ -45,71 +45,46 @@ public:
         /// @param err The Allocator::Error that failed.
         /// @return The new BAD_ALLOCATION error.
         [[nodiscard]] static Error bad_allocation(Allocator::Error err) {
-            Error retErr;
-            retErr.type = BAD_ALLOCATION;
-            retErr.allocator_error = err;
-            return retErr;
+            return {.type = BAD_ALLOCATION, .allocator_error = err};
         }
 
         /// @brief Create a FAILED_TO_DECODE_INSTRUCTION error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new FAILED_TO_DECODE_INSTRUCTION error.
         [[nodiscard]] static Error failed_to_decode_instruction(uint8_t* ip) {
-            Error retErr;
-            retErr.type = FAILED_TO_DECODE_INSTRUCTION;
-            retErr.ip = ip;
-            return retErr;
+            return {.type = FAILED_TO_DECODE_INSTRUCTION, .ip = ip};
         }
 
         /// @brief Create a SHORT_JUMP_IN_TRAMPOLINE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new SHORT_JUMP_IN_TRAMPOLINE error.
         [[nodiscard]] static Error short_jump_in_trampoline(uint8_t* ip) {
-            Error retErr;
-            retErr.type = SHORT_JUMP_IN_TRAMPOLINE;
-            retErr.ip = ip;
-            return retErr;
+            return {.type = SHORT_JUMP_IN_TRAMPOLINE, .ip = ip};
         }
 
         /// @brief Create a IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE error.
         [[nodiscard]] static Error ip_relative_instruction_out_of_range(uint8_t* ip) {
-            Error retErr;
-            retErr.type = IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE;
-            retErr.ip = ip;
-            return retErr;
+            return {.type = IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE, .ip = ip};
         }
 
         /// @brief Create a UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE error.
         [[nodiscard]] static Error unsupported_instruction_in_trampoline(uint8_t* ip) {
-            Error retErr;
-            retErr.type = UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE;
-            retErr.ip = ip;
-            return retErr;
+            return {.type = UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE, .ip = ip};
         }
 
         /// @brief Create a FAILED_TO_UNPROTECT error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new FAILED_TO_UNPROTECT error.
-        [[nodiscard]] static Error failed_to_unprotect(uint8_t* ip) {
-            Error retErr;
-            retErr.type = FAILED_TO_UNPROTECT;
-            retErr.ip = ip;
-            return retErr;
-        }
+        [[nodiscard]] static Error failed_to_unprotect(uint8_t* ip) { return {.type = FAILED_TO_UNPROTECT, .ip = ip}; }
 
         /// @brief Create a NOT_ENOUGH_SPACE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new NOT_ENOUGH_SPACE error.
-        [[nodiscard]] static Error not_enough_space(uint8_t* ip) {
-            Error retErr;
-            retErr.type = NOT_ENOUGH_SPACE;
-            retErr.ip = ip;
-            return retErr;
-        }
+        [[nodiscard]] static Error not_enough_space(uint8_t* ip) { return {.type = NOT_ENOUGH_SPACE, .ip = ip}; }
     };
 
     /// @brief Flags for InlineHook.
@@ -135,12 +110,10 @@ public:
     /// @return The InlineHook or an InlineHook::Error if an error occurred.
     /// @note This will use the default global Allocator.
     /// @note If you don't care about error handling, use the easy API (safetyhook::create_inline).
-/*
-    [[nodiscard]] static std::expected<InlineHook, Error> create(
-        FnPtr auto target, FnPtr auto destination, Flags flags = Default) {
+    template <typename T, typename U>
+    [[nodiscard]] static std::expected<InlineHook, Error> create(T target, U destination, Flags flags = Default) {
         return create(reinterpret_cast<void*>(target), reinterpret_cast<void*>(destination), flags);
     }
-*/
 
     /// @brief Create an inline hook with a given Allocator.
     /// @param allocator The allocator to use.
@@ -159,12 +132,11 @@ public:
     /// @param flags The flags to use.
     /// @return The InlineHook or an InlineHook::Error if an error occurred.
     /// @note If you don't care about error handling, use the easy API (safetyhook::create_inline).
-/*
+    template <typename T, typename U>
     [[nodiscard]] static std::expected<InlineHook, Error> create(
-        const std::shared_ptr<Allocator>& allocator, FnPtr auto target, FnPtr auto destination, Flags flags = Default) {
+        const std::shared_ptr<Allocator>& allocator, T target, U destination, Flags flags = Default) {
         return create(allocator, reinterpret_cast<void*>(target), reinterpret_cast<void*>(destination), flags);
     }
-*/
 
     InlineHook() = default;
     InlineHook(const InlineHook&) = delete;
