@@ -5,7 +5,7 @@
 
 #ifndef SAFETYHOOK_USE_CXXMODULES
 #include <cstdint>
-#include <expected>
+#include <expected.hpp>
 #include <unordered_map>
 #else
 import std.compat;
@@ -110,7 +110,10 @@ public:
         /// @param err The Allocator::Error that failed.
         /// @return The new BAD_ALLOCATION error.
         [[nodiscard]] static Error bad_allocation(Allocator::Error err) {
-            return {.type = BAD_ALLOCATION, .allocator_error = err};
+            Error retErr;
+            retErr.type = BAD_ALLOCATION;
+            retErr.allocator_error = err;
+            return retErr;
         }
     };
 

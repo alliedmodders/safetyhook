@@ -41,14 +41,20 @@ public:
         /// @param err The Allocator::Error that failed.
         /// @return The new BAD_ALLOCATION error.
         [[nodiscard]] static Error bad_allocation(Allocator::Error err) {
-            return {.type = BAD_ALLOCATION, .allocator_error = err};
+            Error retErr;
+            retErr.type = BAD_ALLOCATION;
+            retErr.allocator_error = err;
+            return retErr;
         }
 
         /// @brief Create a BAD_INLINE_HOOK error.
         /// @param err The InlineHook::Error that failed.
         /// @return The new BAD_INLINE_HOOK error.
         [[nodiscard]] static Error bad_inline_hook(InlineHook::Error err) {
-            return {.type = BAD_INLINE_HOOK, .inline_hook_error = err};
+            Error retErr;
+            retErr.type = BAD_INLINE_HOOK;
+            retErr.inline_hook_error = err;
+            return retErr;
         }
     };
 
