@@ -7,40 +7,48 @@ SAFETYHOOK_BUILD_DOCS = false
 SAFETYHOOK_BUILD_TEST = false
 SAFETYHOOK_BUILD_EXAMPLES = false
 SAFETYHOOK_AMALGAMATE = false
-SAFETYHOOK_FETCH_ZYDIS = false
+SAFETYHOOK_FETCH_ZYDIS = true
 SAFETYHOOK_USE_CXXMODULES = false
 
 [conditions]
 build-docs = "SAFETYHOOK_BUILD_DOCS"
 build-test = "SAFETYHOOK_BUILD_TEST"
 build-examples = "SAFETYHOOK_BUILD_EXAMPLES"
+shared = "BUILD_SHARED_LIBS"
 windows-only-example = "SAFETYHOOK_BUILD_EXAMPLES AND WIN32"
 amalgamate = "SAFETYHOOK_AMALGAMATE"
 build-amalgamate-test = "SAFETYHOOK_BUILD_TEST AND SAFETYHOOK_AMALGAMATE"
 fetch-zydis = "SAFETYHOOK_FETCH_ZYDIS"
+find-zydis = "(NOT SAFETYHOOK_FETCH_ZYDIS) AND NOT (TARGET Zydis)"
 
 [fetch-content.ut]
 condition = "build-test"
 git = "https://github.com/boost-ext/ut.git"
 tag = "v2.0.1"
 shallow = true
+EXCLUDE_FROM_ALL = true
 
 [fetch-content.xbyak]
 condition = "build-test"
 git = "https://github.com/herumi/xbyak.git"
 tag = "v6.69"
 shallow = true
+EXCLUDE_FROM_ALL = true
 
 [fetch-content.Zydis]
 condition = "fetch-zydis"
 git = "https://github.com/zyantific/zydis.git"
-tag = "v4.0.0"
+tag = "v4.1.0"
 shallow = true
 cmake-before = """
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_DOXYGEN "" OFF)
 """
+cmake-after = """
+add_library(Zydis::Zydis ALIAS Zydis)
+"""
+EXCLUDE_FROM_ALL = true
 
 [find-package.Doxygen]
 condition = "build-docs"
@@ -50,20 +58,65 @@ required = true
 condition = "amalgamate"
 required = true
 
+[find-package.Zydis]
+condition = "find-zydis"
+config = true
+required = true
+
 [target.safetyhook]
-type = "static"
+type = "library"
 sources = ["src/*.cpp"]
-include-directories = ["include/"]
+include-directories = [
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>",
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+]
 compile-features = ["cxx_std_23"]
 alias = "safetyhook::safetyhook"
-link-libraries = ["Zydis"]
-msvc.private-compile-options = ["/permissive-", "/W4", "/w14640"]
+link-libraries = ["Zydis::Zydis"]
+msvc.private-compile-options = ["/permissive-", "/W4", "/w14640", "/wd4251"]
 clang.private-compile-options = ["-Wall", "-Wextra", "-Wshadow", "-Wnon-virtual-dtor", "-pedantic"]
 gcc.private-compile-options = ["-Wall", "-Wextra", "-Wshadow", "-Wnon-virtual-dtor", "-pedantic"]
+shared.compile-definitions = ["SAFETYHOOK_SHARED_LIB"]
+shared.private-compile-definitions = ["SAFETYHOOK_BUILDING"]
 cmake-after = """
 if(SAFETYHOOK_USE_CXXMODULES)
     target_compile_definitions(safetyhook INTERFACE SAFETYHOOK_USE_CXXMODULES)
 endif()
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/safetyhook-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/safetyhook-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/safetyhook
+)
+
+install(
+    TARGETS safetyhook
+    EXPORT safetyhook-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    EXPORT safetyhook-targets
+    FILE safetyhook-targets.cmake
+    NAMESPACE safetyhook::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/safetyhook
+)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/safetyhook-config.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/safetyhook
+)
 """
 
 [target.docs]
@@ -153,7 +206,7 @@ condition = "build-amalgamate-test"
 type = "executable"
 sources = ["test/*.cpp", "amalgamated-dist/safetyhook.cpp"]
 include-directories = ["amalgamated-dist/"]
-link-libraries = ["Zydis", "Boost::ut", "xbyak::xbyak"]
+link-libraries = ["Zydis::Zydis", "Boost::ut", "xbyak::xbyak"]
 compile-definitions = ["BOOST_UT_DISABLE_MODULE"]
 compile-features = ["cxx_std_23"]
 cmake-after = """

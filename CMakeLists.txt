@@ -29,7 +29,7 @@ option(SAFETYHOOK_BUILD_DOCS "" OFF)
 option(SAFETYHOOK_BUILD_TEST "" OFF)
 option(SAFETYHOOK_BUILD_EXAMPLES "" OFF)
 option(SAFETYHOOK_AMALGAMATE "" OFF)
-option(SAFETYHOOK_FETCH_ZYDIS "" OFF)
+option(SAFETYHOOK_FETCH_ZYDIS "" ON)
 option(SAFETYHOOK_USE_CXXMODULES "" OFF)
 
 project(safetyhook)
@@ -45,6 +45,8 @@ if(SAFETYHOOK_BUILD_TEST) # build-test
 			v2.0.1
 		GIT_SHALLOW
 			ON
+		EXCLUDE_FROM_ALL
+			ON
 	)
 	FetchContent_MakeAvailable(ut)
 
@@ -58,6 +60,8 @@ if(SAFETYHOOK_BUILD_TEST) # build-test
 			v6.69
 		GIT_SHALLOW
 			ON
+		EXCLUDE_FROM_ALL
+			ON
 	)
 	FetchContent_MakeAvailable(xbyak)
 
@@ -67,16 +71,20 @@ if(SAFETYHOOK_FETCH_ZYDIS) # fetch-zydis
 	option(ZYDIS_BUILD_TOOLS "" OFF)
 	option(ZYDIS_BUILD_DOXYGEN "" OFF)
 
-	message(STATUS "Fetching Zydis (v4.0.0)...")
+	message(STATUS "Fetching Zydis (v4.1.0)...")
 	FetchContent_Declare(Zydis
 		GIT_REPOSITORY
 			"https://github.com/zyantific/zydis.git"
 		GIT_TAG
-			v4.0.0
+			v4.1.0
 		GIT_SHALLOW
+			ON
+		EXCLUDE_FROM_ALL
 			ON
 	)
 	FetchContent_MakeAvailable(Zydis)
+
+	add_library(Zydis::Zydis ALIAS Zydis)
 
 endif()
 # Packages
@@ -86,6 +94,10 @@ if(SAFETYHOOK_BUILD_DOCS) # build-docs
 endif()
 if(SAFETYHOOK_AMALGAMATE) # amalgamate
 	find_package(Python3 REQUIRED)
+
+endif()
+if((NOT SAFETYHOOK_FETCH_ZYDIS) AND NOT (TARGET Zydis)) # find-zydis
+	find_package(Zydis REQUIRED CONFIG)
 
 endif()
 # Target: safetyhook
@@ -101,12 +113,24 @@ set(safetyhook_SOURCES
 	cmake.toml
 )
 
-add_library(safetyhook STATIC)
+add_library(safetyhook)
 
 target_sources(safetyhook PRIVATE ${safetyhook_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${safetyhook_SOURCES})
 
 add_library(safetyhook::safetyhook ALIAS safetyhook)
+if(BUILD_SHARED_LIBS) # shared
+	target_compile_definitions(safetyhook PUBLIC
+		SAFETYHOOK_SHARED_LIB
+	)
+endif()
+
+if(BUILD_SHARED_LIBS) # shared
+	target_compile_definitions(safetyhook PRIVATE
+		SAFETYHOOK_BUILDING
+	)
+endif()
+
 target_compile_features(safetyhook PUBLIC
 	cxx_std_23
 )
@@ -116,6 +140,7 @@ if(MSVC) # msvc
 		"/permissive-"
 		"/W4"
 		"/w14640"
+		"/wd4251"
 	)
 endif()
 
@@ -140,17 +165,53 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "GNU") #
 endif()
 
 target_include_directories(safetyhook PUBLIC
-	"include/"
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+	"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
 
 target_link_libraries(safetyhook PUBLIC
-	Zydis
+	Zydis::Zydis
 )
 
 set(CMKR_TARGET safetyhook)
 if(SAFETYHOOK_USE_CXXMODULES)
     target_compile_definitions(safetyhook INTERFACE SAFETYHOOK_USE_CXXMODULES)
 endif()
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/safetyhook-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/safetyhook-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/safetyhook
+)
+
+install(
+    TARGETS safetyhook
+    EXPORT safetyhook-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    EXPORT safetyhook-targets
+    FILE safetyhook-targets.cmake
+    NAMESPACE safetyhook::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/safetyhook
+)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/safetyhook-config.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/safetyhook
+)
 
 # Target: docs
 if(SAFETYHOOK_BUILD_DOCS) # build-docs
@@ -425,7 +486,7 @@ if(SAFETYHOOK_BUILD_TEST AND SAFETYHOOK_AMALGAMATE) # build-amalgamate-test
 	)
 
 	target_link_libraries(test-amalgamated PRIVATE
-		Zydis
+		Zydis::Zydis
 		Boost::ut
 		xbyak::xbyak
 	)
