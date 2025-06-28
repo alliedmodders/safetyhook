@@ -6,7 +6,7 @@ def AddSourceFilesFromDir(path, files):
     list.append(os.path.join(path, file))
   return list
 
-libsafetyhook = builder.LibraryProject('safetyhook')
+libsafetyhook = builder.StaticLibraryProject('safetyhook')
 # SafetyHook sourcefiles
 libsafetyhook.sources = AddSourceFilesFromDir(os.path.join(builder.currentSourcePath, 'src'),[
   "allocator.cpp",
@@ -28,7 +28,7 @@ for compiler in SafetyHook.all_targets:
   # Reset all flags, safetyhook requires specific compilation flags
   compiler.cxxflags = []
   compiler.cflags = []
-  compiler.defines = ['SAFETYHOOK_SHARED_LIB', 'SAFETYHOOK_BUILDING']
+  compiler.defines = []
   compiler.includes = []
   compiler.cxxincludes = []
 
