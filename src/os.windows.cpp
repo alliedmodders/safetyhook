@@ -106,14 +106,16 @@ bool vm_is_writable(uint8_t* address, size_t size) {
 }
 
 bool vm_is_executable(uint8_t* address) {
-    LPVOID image_base_ptr;
-
-    if (RtlPcToFileHeader(address, &image_base_ptr) == nullptr) {
+    // Check if the address is in a valid module allowing us to potentially skip a heavier memory query.
+    HMODULE image{};
+    if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPTSTR>(address), &image) ||
+        image == nullptr) {
         return vm_query(address).value_or(VmBasicInfo{}).access.execute;
     }
 
     // Just check if the section is executable.
-    const auto* image_base = reinterpret_cast<uint8_t*>(image_base_ptr);
+    const auto* image_base = reinterpret_cast<uint8_t*>(image);
     const auto* dos_hdr = reinterpret_cast<const IMAGE_DOS_HEADER*>(image_base);
 
     if (dos_hdr->e_magic != IMAGE_DOS_SIGNATURE) {
@@ -262,6 +264,8 @@ bool TrapManager::is_destructed = false;
 void find_me() {
 }
 
+static std::mutex virtual_protect_mutex;
+
 void trap_threads(uint8_t* from, uint8_t* to, size_t len, const std::function<void()>& run_fn) {
     MEMORY_BASIC_INFORMATION find_me_mbi{};
     MEMORY_BASIC_INFORMATION from_mbi{};
@@ -296,6 +300,9 @@ void trap_threads(uint8_t* from, uint8_t* to, size_t len, const std::function<vo
 
         TrapManager::instance->add_trap(from, to, len);
     }
+
+    // Make sure we aren't working on a different address in the same memory page on a different thread.
+    std::scoped_lock vp_lock{virtual_protect_mutex};
 
     DWORD from_protect;
     DWORD to_protect;
