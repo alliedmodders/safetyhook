@@ -215,12 +215,15 @@ std::expected<void, InlineHook::Error> InlineHook::e9_hook(const std::shared_ptr
                 std::uint8_t mov = 0x0;
                 switch (thunk[1]) {
                     // mov eax, [esp]
-                    case 0x24:
+                    case 0x04:
                         mov = 0xB8;
                     break;
-                    // mov ecx, [esp]
+                    // mov ebx, [esp]
                     case 0x1C:
                         mov = 0xBB;
+                    // mov ecx, [esp]
+                    case 0x0C:
+                        mov = 0xB9;
                     break;
                     // mov edx, [esp]
                     case 0x14:
