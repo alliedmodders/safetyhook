@@ -221,6 +221,7 @@ std::expected<void, InlineHook::Error> InlineHook::e9_hook(const std::shared_ptr
                     // mov ebx, [esp]
                     case 0x1C:
                         mov = 0xBB;
+                    break;
                     // mov ecx, [esp]
                     case 0x0C:
                         mov = 0xB9;
