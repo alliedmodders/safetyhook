@@ -203,9 +203,51 @@ std::expected<void, InlineHook::Error> InlineHook::e9_hook(const std::shared_ptr
             return tl::unexpected{Error::failed_to_decode_instruction(ip)};
         }
 
+        m_trampoline_size += ix.length;
+        m_original_bytes.insert(m_original_bytes.end(), ip, ip + ix.length);
+
+        const auto is_relative = (ix.attributes & ZYDIS_ATTRIB_IS_RELATIVE) != 0;
+
+        if (is_relative) {
+            if (ix.raw.disp.size == 32) {
+                const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.disp.value);
+                desired_addresses.emplace_back(target_address);
+            } else if (ix.raw.imm[0].size == 32) {
+                const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.imm[0].value.s);
+                desired_addresses.emplace_back(target_address);
+            } else if (ix.meta.category == ZYDIS_CATEGORY_COND_BR && ix.meta.branch_type == ZYDIS_BRANCH_TYPE_SHORT) {
+                const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.imm[0].value.s);
+                desired_addresses.emplace_back(target_address);
+                m_trampoline_size += 4; // near conditional branches are 4 bytes larger.
+            } else if (ix.meta.category == ZYDIS_CATEGORY_UNCOND_BR && ix.meta.branch_type == ZYDIS_BRANCH_TYPE_SHORT) {
+                const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.imm[0].value.s);
+                desired_addresses.emplace_back(target_address);
+                m_trampoline_size += 3; // near unconditional branches are 3 bytes larger.
+            } else {
+                return tl::unexpected{Error::unsupported_instruction_in_trampoline(ip)};
+            }
+        }
+    }
+
+    auto trampoline_allocation = allocator->allocate_near(desired_addresses, m_trampoline_size);
+
+    if (!trampoline_allocation) {
+        return tl::unexpected{Error::bad_allocation(trampoline_allocation.error())};
+    }
+
+    m_trampoline = std::move(*trampoline_allocation);
+
+    for (auto ip = m_target, tramp_ip = m_trampoline.data(); ip < m_target + m_original_bytes.size(); ip += ix.length) {
+        if (!decode(&ix, ip)) {
+            m_trampoline.free();
+            return tl::unexpected{Error::failed_to_decode_instruction(ip)};
+        }
+
+        const auto is_relative = (ix.attributes & ZYDIS_ATTRIB_IS_RELATIVE) != 0;
+
 #ifdef SAFETYHOOK_ARCH_X86_32
         // Handle thunks
-        if (ip[0] == 0xE8 || ip[0] == 0xE9) {
+        if (ip[0] == 0xE8) {
             auto offset = *(reinterpret_cast<std::int32_t*>(ip + 1)) + 0x5;
             auto thunk = ip + offset;
 
@@ -252,55 +294,18 @@ std::expected<void, InlineHook::Error> InlineHook::e9_hook(const std::shared_ptr
                 auto return_address = ip + 5;
                 *reinterpret_cast<std::int32_t*>(opcodes + 1) = reinterpret_cast<std::intptr_t>(return_address);
 
-                m_trampoline_size += sizeof(opcodes);
-                m_original_bytes.insert(m_original_bytes.end(), opcodes, opcodes + sizeof(opcodes));
+                // Both instructions (original and replacement) are 5 bytes long
+                // we don't need to handle a special allocation case for the trampoline
+                std::copy_n(opcodes, sizeof(opcodes), tramp_ip);
+                tramp_ip += ix.length;
+                // Safety check just in case
+                if (ix.length != sizeof(opcodes)) {
+                    return tl::unexpected{Error::unsupported_instruction_in_trampoline(ip)};
+                }
                 continue;
             }
         }
 #endif
-        {
-            m_trampoline_size += ix.length;
-            m_original_bytes.insert(m_original_bytes.end(), ip, ip + ix.length);
-
-            const auto is_relative = (ix.attributes & ZYDIS_ATTRIB_IS_RELATIVE) != 0;
-
-            if (is_relative) {
-                if (ix.raw.disp.size == 32) {
-                    const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.disp.value);
-                    desired_addresses.emplace_back(target_address);
-                } else if (ix.raw.imm[0].size == 32) {
-                    const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.imm[0].value.s);
-                    desired_addresses.emplace_back(target_address);
-                } else if (ix.meta.category == ZYDIS_CATEGORY_COND_BR && ix.meta.branch_type == ZYDIS_BRANCH_TYPE_SHORT) {
-                    const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.imm[0].value.s);
-                    desired_addresses.emplace_back(target_address);
-                    m_trampoline_size += 4; // near conditional branches are 4 bytes larger.
-                } else if (ix.meta.category == ZYDIS_CATEGORY_UNCOND_BR && ix.meta.branch_type == ZYDIS_BRANCH_TYPE_SHORT) {
-                    const auto target_address = ip + ix.length + static_cast<int32_t>(ix.raw.imm[0].value.s);
-                    desired_addresses.emplace_back(target_address);
-                    m_trampoline_size += 3; // near unconditional branches are 3 bytes larger.
-                } else {
-                    return tl::unexpected{Error::unsupported_instruction_in_trampoline(ip)};
-                }
-            }
-        }
-    }
-
-    auto trampoline_allocation = allocator->allocate_near(desired_addresses, m_trampoline_size);
-
-    if (!trampoline_allocation) {
-        return tl::unexpected{Error::bad_allocation(trampoline_allocation.error())};
-    }
-
-    m_trampoline = std::move(*trampoline_allocation);
-
-    for (auto ip = m_target, tramp_ip = m_trampoline.data(); ip < m_target + m_original_bytes.size(); ip += ix.length) {
-        if (!decode(&ix, ip)) {
-            m_trampoline.free();
-            return tl::unexpected{Error::failed_to_decode_instruction(ip)};
-        }
-
-        const auto is_relative = (ix.attributes & ZYDIS_ATTRIB_IS_RELATIVE) != 0;
 
         if (is_relative && ix.raw.disp.size == 32) {
             std::copy_n(ip, ix.length, tramp_ip);
