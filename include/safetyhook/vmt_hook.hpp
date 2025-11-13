@@ -17,7 +17,7 @@ import std.compat;
 
 namespace safetyhook {
 /// @brief A hook class that allows for hooking a single method in a VMT.
-class VmHook final {
+class SAFETYHOOK_API VmHook final {
 public:
     VmHook() = default;
     VmHook(const VmHook&) = delete;
@@ -92,7 +92,7 @@ private:
 };
 
 /// @brief A hook class that copies an entire VMT for a given object and replaces it.
-class VmtHook final {
+class SAFETYHOOK_API VmtHook final {
 public:
     /// @brief Error type for VmtHook.
     struct Error {
@@ -110,10 +110,10 @@ public:
         /// @param err The Allocator::Error that failed.
         /// @return The new BAD_ALLOCATION error.
         [[nodiscard]] static Error bad_allocation(Allocator::Error err) {
-            Error retErr;
-            retErr.type = BAD_ALLOCATION;
-            retErr.allocator_error = err;
-            return retErr;
+            Error error{};
+            error.type = BAD_ALLOCATION;
+            error.allocator_error = err;
+            return error;
         }
     };
 

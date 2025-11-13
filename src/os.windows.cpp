@@ -83,18 +83,18 @@ std::expected<VmBasicInfo, OsError> vm_query(uint8_t* address) {
         return tl::unexpected{OsError::FAILED_TO_QUERY};
     }
 
-    VmAccess access(
-        (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)) != 0,
-        (mbi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE)) != 0,
-        (mbi.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)) != 0
-    );
+    VmAccess access;
+    access.read = (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)) != 0;
+    access.write = (mbi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE)) != 0;
+    access.execute = (mbi.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)) != 0;
 
-    VmBasicInfo retInfo;
-    retInfo.address = static_cast<uint8_t*>(mbi.AllocationBase);
-    retInfo.size = mbi.RegionSize;
-    retInfo.access = access;
-    retInfo.is_free = (mbi.State == MEM_FREE);
-    return retInfo;
+    VmBasicInfo info;
+    info.address = static_cast<uint8_t*>(mbi.AllocationBase);
+    info.size = mbi.RegionSize;
+    info.access = access;
+    info.is_free = mbi.State == MEM_FREE;
+
+    return info;
 }
 
 bool vm_is_readable(uint8_t* address, size_t size) {
@@ -106,14 +106,16 @@ bool vm_is_writable(uint8_t* address, size_t size) {
 }
 
 bool vm_is_executable(uint8_t* address) {
-    LPVOID image_base_ptr;
-
-    if (RtlPcToFileHeader(address, &image_base_ptr) == nullptr) {
+    // Check if the address is in a valid module allowing us to potentially skip a heavier memory query.
+    HMODULE image{};
+    if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPTSTR>(address), &image) ||
+        image == nullptr) {
         return vm_query(address).value_or(VmBasicInfo{}).access.execute;
     }
 
     // Just check if the section is executable.
-    const auto* image_base = reinterpret_cast<uint8_t*>(image_base_ptr);
+    const auto* image_base = reinterpret_cast<uint8_t*>(image);
     const auto* dos_hdr = reinterpret_cast<const IMAGE_DOS_HEADER*>(image_base);
 
     if (dos_hdr->e_magic != IMAGE_DOS_SIGNATURE) {
@@ -166,12 +168,14 @@ class TrapManager final {
 public:
     static std::mutex mutex;
     static std::unique_ptr<TrapManager> instance;
+    static bool is_destructed;
 
     TrapManager() { m_trap_veh = AddVectoredExceptionHandler(1, trap_handler); }
     ~TrapManager() {
         if (m_trap_veh != nullptr) {
             RemoveVectoredExceptionHandler(m_trap_veh);
         }
+        is_destructed = true;
     }
 
     TrapInfo* find_trap(uint8_t* address) {
@@ -215,7 +219,8 @@ public:
         info.to_page_end = align_up(to + len, 0x1000);
         info.to = to;
         info.len = len;
-        m_traps.insert_or_assign(from, info);
+
+        m_traps.insert_or_assign(from, std::move(info));
     }
 
 
@@ -254,9 +259,12 @@ private:
 
 std::mutex TrapManager::mutex;
 std::unique_ptr<TrapManager> TrapManager::instance;
+bool TrapManager::is_destructed = false;
 
 void find_me() {
 }
+
+static std::mutex virtual_protect_mutex;
 
 void trap_threads(uint8_t* from, uint8_t* to, size_t len, const std::function<void()>& run_fn) {
     MEMORY_BASIC_INFORMATION find_me_mbi{};
@@ -273,13 +281,28 @@ void trap_threads(uint8_t* from, uint8_t* to, size_t len, const std::function<vo
         new_protect = PAGE_EXECUTE_READWRITE;
     }
 
-    std::scoped_lock lock{TrapManager::mutex};
+    auto si = system_info();
+    auto* from_page_start = align_down(from, si.page_size);
+    auto* from_page_end = align_up(from + len, si.page_size);
+    auto* vp_start = reinterpret_cast<uint8_t*>(&VirtualProtect);
+    auto* vp_end = vp_start + 0x20;
 
-    if (TrapManager::instance == nullptr) {
-        TrapManager::instance = std::make_unique<TrapManager>();
+    if (!(from_page_end < vp_start || vp_end < from_page_start)) {
+        new_protect = PAGE_EXECUTE_READWRITE;
     }
 
-    TrapManager::instance->add_trap(from, to, len);
+    if (!TrapManager::is_destructed) {
+        std::scoped_lock lock{TrapManager::mutex};
+
+        if (TrapManager::instance == nullptr) {
+            TrapManager::instance = std::make_unique<TrapManager>();
+        }
+
+        TrapManager::instance->add_trap(from, to, len);
+    }
+
+    // Make sure we aren't working on a different address in the same memory page on a different thread.
+    std::scoped_lock vp_lock{virtual_protect_mutex};
 
     DWORD from_protect;
     DWORD to_protect;

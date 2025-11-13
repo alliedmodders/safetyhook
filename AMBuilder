@@ -40,7 +40,8 @@ for compiler in SafetyHook.all_targets:
       "/EHsc",
       "/permissive-",
       "/w14640",
-      "/std:c++17"
+      "/std:c++17",
+      "/wd4251"
     ]
     binary.sources += [ os.path.join(builder.currentSourcePath, 'src', 'os.windows.cpp') ]
   elif compiler.target.platform == 'linux':

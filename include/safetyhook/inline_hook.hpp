@@ -20,7 +20,7 @@ import std.compat;
 
 namespace safetyhook {
 /// @brief An inline hook.
-class InlineHook final {
+class SAFETYHOOK_API InlineHook final {
 public:
     /// @brief Error type for InlineHook.
     struct Error {
@@ -45,70 +45,70 @@ public:
         /// @param err The Allocator::Error that failed.
         /// @return The new BAD_ALLOCATION error.
         [[nodiscard]] static Error bad_allocation(Allocator::Error err) {
-            Error retErr;
-            retErr.type = BAD_ALLOCATION;
-            retErr.allocator_error = err;
-            return retErr;
+            Error error{};
+            error.type = BAD_ALLOCATION;
+            error.allocator_error = err;
+            return error;
         }
 
         /// @brief Create a FAILED_TO_DECODE_INSTRUCTION error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new FAILED_TO_DECODE_INSTRUCTION error.
         [[nodiscard]] static Error failed_to_decode_instruction(uint8_t* ip) {
-            Error retErr;
-            retErr.type = FAILED_TO_DECODE_INSTRUCTION;
-            retErr.ip = ip;
-            return retErr;
+            Error error{};
+            error.type = FAILED_TO_DECODE_INSTRUCTION;
+            error.ip = ip;
+            return error;
         }
 
         /// @brief Create a SHORT_JUMP_IN_TRAMPOLINE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new SHORT_JUMP_IN_TRAMPOLINE error.
         [[nodiscard]] static Error short_jump_in_trampoline(uint8_t* ip) {
-            Error retErr;
-            retErr.type = SHORT_JUMP_IN_TRAMPOLINE;
-            retErr.ip = ip;
-            return retErr;
+            Error error{};
+            error.type = SHORT_JUMP_IN_TRAMPOLINE;
+            error.ip = ip;
+            return error;
         }
 
         /// @brief Create a IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE error.
         [[nodiscard]] static Error ip_relative_instruction_out_of_range(uint8_t* ip) {
-            Error retErr;
-            retErr.type = IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE;
-            retErr.ip = ip;
-            return retErr;
+            Error error{};
+            error.type = IP_RELATIVE_INSTRUCTION_OUT_OF_RANGE;
+            error.ip = ip;
+            return error;
         }
 
         /// @brief Create a UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE error.
         [[nodiscard]] static Error unsupported_instruction_in_trampoline(uint8_t* ip) {
-            Error retErr;
-            retErr.type = UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE;
-            retErr.ip = ip;
-            return retErr;
+            Error error{};
+            error.type = UNSUPPORTED_INSTRUCTION_IN_TRAMPOLINE;
+            error.ip = ip;
+            return error;
         }
 
         /// @brief Create a FAILED_TO_UNPROTECT error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new FAILED_TO_UNPROTECT error.
         [[nodiscard]] static Error failed_to_unprotect(uint8_t* ip) {
-            Error retErr;
-            retErr.type = FAILED_TO_UNPROTECT;
-            retErr.ip = ip;
-            return retErr;
+            Error error{};
+            error.type = FAILED_TO_UNPROTECT;
+            error.ip = ip;
+            return error;
         }
 
         /// @brief Create a NOT_ENOUGH_SPACE error.
         /// @param ip The IP of the problematic instruction.
         /// @return The new NOT_ENOUGH_SPACE error.
         [[nodiscard]] static Error not_enough_space(uint8_t* ip) {
-            Error retErr;
-            retErr.type = NOT_ENOUGH_SPACE;
-            retErr.ip = ip;
-            return retErr;
+            Error error{};
+            error.type = NOT_ENOUGH_SPACE;
+            error.ip = ip;
+            return error;
         }
     };
 
