@@ -108,7 +108,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${safetyhook_SOURCES})
 
 add_library(safetyhook::safetyhook ALIAS safetyhook)
 target_compile_features(safetyhook PUBLIC
-	cxx_std_23
+	cxx_std_20
 )
 
 if(MSVC) # msvc
@@ -219,7 +219,7 @@ if(SAFETYHOOK_BUILD_EXAMPLES) # build-examples
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${example-minimal_SOURCES})
 
 	target_compile_features(example-minimal PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(example-minimal PRIVATE
@@ -245,7 +245,7 @@ if(SAFETYHOOK_BUILD_EXAMPLES) # build-examples
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${example-multiple_SOURCES})
 
 	target_compile_features(example-multiple PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(example-multiple PRIVATE
@@ -271,7 +271,7 @@ if(SAFETYHOOK_BUILD_EXAMPLES) # build-examples
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${example-midhook_SOURCES})
 
 	target_compile_features(example-midhook PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(example-midhook PRIVATE
@@ -297,7 +297,7 @@ if(SAFETYHOOK_BUILD_EXAMPLES) # build-examples
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${example-threadsafe_SOURCES})
 
 	target_compile_features(example-threadsafe PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(example-threadsafe PRIVATE
@@ -323,7 +323,7 @@ if(SAFETYHOOK_BUILD_EXAMPLES AND WIN32) # windows-only-example
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${example-dll_SOURCES})
 
 	target_compile_features(example-dll PUBLIC
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(example-dll PUBLIC
@@ -344,7 +344,7 @@ if(SAFETYHOOK_BUILD_EXAMPLES) # build-examples
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${example-vmthook_SOURCES})
 
 	target_compile_features(example-vmthook PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(example-vmthook PRIVATE
@@ -379,7 +379,7 @@ if(SAFETYHOOK_BUILD_TEST) # build-test
 	)
 
 	target_compile_features(test PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_link_libraries(test PRIVATE
@@ -417,7 +417,7 @@ if(SAFETYHOOK_BUILD_TEST AND SAFETYHOOK_AMALGAMATE) # build-amalgamate-test
 	)
 
 	target_compile_features(test-amalgamated PRIVATE
-		cxx_std_23
+		cxx_std_20
 	)
 
 	target_include_directories(test-amalgamated PRIVATE

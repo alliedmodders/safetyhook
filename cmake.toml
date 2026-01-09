@@ -54,7 +54,7 @@ required = true
 type = "static"
 sources = ["src/*.cpp"]
 include-directories = ["include/"]
-compile-features = ["cxx_std_23"]
+compile-features = ["cxx_std_20"]
 alias = "safetyhook::safetyhook"
 link-libraries = ["Zydis"]
 msvc.private-compile-options = ["/permissive-", "/W4", "/w14640"]
@@ -108,13 +108,13 @@ add_custom_target(Amalgamate ALL DEPENDS ${AMALGAMATED_FILE} ${AMALGAMATED_HEADE
 condition = "build-examples"
 type = "executable"
 link-libraries = ["safetyhook::safetyhook"]
-compile-features = ["cxx_std_23"]
+compile-features = ["cxx_std_20"]
 
 [template.example-dll]
 condition = "windows-only-example"
 type = "shared"
 link-libraries = ["safetyhook::safetyhook"]
-compile-features = ["cxx_std_23"]
+compile-features = ["cxx_std_20"]
 
 [target.example-minimal]
 type = "example"
@@ -146,7 +146,7 @@ type = "executable"
 sources = ["test/*.cpp"]
 link-libraries = ["Boost::ut", "safetyhook::safetyhook", "xbyak::xbyak"]
 compile-definitions = ["BOOST_UT_DISABLE_MODULE"]
-compile-features = ["cxx_std_23"]
+compile-features = ["cxx_std_20"]
 
 [target.test-amalgamated]
 condition = "build-amalgamate-test"
@@ -155,7 +155,7 @@ sources = ["test/*.cpp", "amalgamated-dist/safetyhook.cpp"]
 include-directories = ["amalgamated-dist/"]
 link-libraries = ["Zydis", "Boost::ut", "xbyak::xbyak"]
 compile-definitions = ["BOOST_UT_DISABLE_MODULE"]
-compile-features = ["cxx_std_23"]
+compile-features = ["cxx_std_20"]
 cmake-after = """
 add_dependencies(test-amalgamated Amalgamate)
 """
