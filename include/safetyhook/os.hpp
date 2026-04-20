@@ -27,7 +27,7 @@ struct VmAccess {
     bool write : 1;
     bool execute : 1;
 
-    constexpr VmAccess() : read(true), write(true), execute(true) {};
+    constexpr VmAccess() : read(false), write(false), execute(false) {};
     constexpr VmAccess(bool pread, bool pwrite, bool pexecute) : read(pread), write(pwrite), execute(pexecute) {};
 
     constexpr bool operator==(const VmAccess& other) const {
