@@ -22,7 +22,8 @@ libsafetyhook.sources += AddSourceFilesFromDir(os.path.join(builder.currentSourc
 ])
 
 for compiler in SafetyHook.all_targets:
-  binary = libsafetyhook.Configure(compiler, libsafetyhook.name, 'Release - {0}'.format(compiler.target.arch))
+  tag = 'Debug' if builder.options.debug == '1' else 'Release'
+  binary = libsafetyhook.Configure(compiler, libsafetyhook.name, '{0} - {1}'.format(tag, compiler.target.arch))
   # Configure the binary's compiler
   compiler = binary.compiler
   # Reset all flags, safetyhook requires specific compilation flags
@@ -32,7 +33,16 @@ for compiler in SafetyHook.all_targets:
   compiler.includes = []
   compiler.cxxincludes = []
 
+  # Debugging
+  if builder.options.debug == '1':
+    compiler.defines += ['DEBUG', '_DEBUG']
+
   if compiler.target.platform == 'windows':
+    if builder.options.debug == '1':
+      compiler.cflags += ['/MTd', '/Od', '/RTC1']
+      compiler.defines += ['_ITERATOR_DEBUG_LEVEL=0']
+    else:
+      compiler.cflags += ['/MT']
     compiler.cflags += [
       "/W4",
     ]
