@@ -1,6 +1,8 @@
 #include <iostream>
 
-#include <safetyhook.hpp>
+#include <safetyhook/common.hpp> // SAFETYHOOK_NOINLINE macro
+
+import safetyhook;
 
 SAFETYHOOK_NOINLINE int add(int x, int y) {
     return x + y;
