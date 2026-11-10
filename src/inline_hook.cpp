@@ -1,10 +1,12 @@
 #include <iterator>
 #include <optional>
 
-#if __has_include("Zydis/Zydis.h")
-#include "Zydis/Zydis.h"
-#elif __has_include("Zydis.h")
+// The amalgamated Zydis.h first: the AMBuild build compiles the Zydis.c next to it, and a Zydis of
+// the include path (e.g. the system's) may be another version, whose structures differ.
+#if __has_include("Zydis.h")
 #include "Zydis.h"
+#elif __has_include("Zydis/Zydis.h")
+#include "Zydis/Zydis.h"
 #else
 #error "Zydis not found"
 #endif
